@@ -1,0 +1,13 @@
+# Runtime data (download counter)
+download-stats.json
+
+# macOS
+.DS_Store
+
+# Logs / deps
+node_modules/
+*.log
+
+# Local-only (kept on disk, not published)
+brand_assets/
+CLAUDE.md

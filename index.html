@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pin Paper: Turn your Pinterest boards into desktop wallpapers</title>
+<meta name="description" content="Pin Paper is a Mac and Windows app for turning your Pinterest boards and local folders into custom desktop wallpapers. Link a board or pick a folder, lay out image frames on a canvas, style them, and generate a wallpaper set sized for your screen." />
+<meta property="og:title" content="Pin Paper. Pin it. Keep it." />
+<meta property="og:description" content="Link your Pinterest boards, lay out a canvas, and generate desktop wallpapers sized for your screen." />
+<meta property="og:type" content="website" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="apple-touch-icon" href="assets/favicon-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ============================== TOKENS ============================== */
+  :root{
+    --pin-red:#E71C23;
+    --red-deep:#B0141A;
+    --red-wash:#FCEBEC;
+    --ink:#0A0A0A;
+    --paper:#FFFFFF;
+    --mist:#F6F4F1;
+    --slate:#6C6C72;
+    --line:#ECE9E4;
+    --line-strong:#E0DCD5;
+    --canvas:#dbd5ef;
+
+    --display:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+    --maxw:1140px;
+    --gutter:clamp(20px,5vw,40px);
+
+    --ease-spring:cubic-bezier(.2,.8,.2,1);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+
+    --shadow-sm:0 1px 2px rgba(10,10,10,.04), 0 2px 6px rgba(10,10,10,.05);
+    --shadow-md:0 4px 10px rgba(10,10,10,.05), 0 14px 30px rgba(176,20,26,.07);
+    --shadow-lg:0 10px 24px rgba(10,10,10,.07), 0 30px 70px rgba(176,20,26,.12);
+    --shadow-float:0 18px 50px rgba(10,10,10,.10), 0 50px 110px rgba(176,20,26,.16);
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;font-family:var(--body);color:var(--ink);background:var(--paper);
+    line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
+  }
+  img{display:block;max-width:100%;}
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--pin-red);color:#fff;}
+
+  /* ============================== LAYOUT ============================== */
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter);}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:.5rem;font-family:var(--body);font-weight:600;
+    font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--pin-red);margin:0 0 1.1rem;
+  }
+  .eyebrow::before{
+    content:"";width:.62rem;height:.82rem;flex:none;background:var(--pin-red);
+    -webkit-mask:url("assets/pin-red.png") center/contain no-repeat;mask:url("assets/pin-red.png") center/contain no-repeat;
+  }
+  h1,h2,h3{font-family:var(--display);font-weight:700;color:var(--ink);margin:0;}
+  .h1{font-size:clamp(2.5rem,6vw,4.2rem);line-height:1.02;letter-spacing:-.035em;}
+  .h2{font-size:clamp(1.9rem,4vw,2.9rem);line-height:1.07;letter-spacing:-.03em;}
+  .lead{font-size:clamp(1.05rem,1.5vw,1.2rem);color:var(--slate);line-height:1.7;}
+
+  /* ============================== BUTTONS ============================== */
+  .btn{
+    --bg:var(--pin-red);--fg:#fff;
+    display:inline-flex;align-items:center;justify-content:center;gap:.55rem;
+    font-family:var(--body);font-weight:600;font-size:.98rem;line-height:1.1;
+    padding:.85rem 1.4rem;border-radius:999px;border:1px solid transparent;
+    background:var(--bg);color:var(--fg);cursor:pointer;
+    transition:transform .25s var(--ease-spring),box-shadow .25s var(--ease-spring),background-color .2s var(--ease-out);
+    box-shadow:var(--shadow-sm);will-change:transform;
+  }
+  .btn svg{width:1.05em;height:1.05em;}
+  .btn:hover{background:var(--red-deep);transform:translateY(-2px);box-shadow:var(--shadow-md);}
+  .btn:active{transform:translateY(0);box-shadow:var(--shadow-sm);}
+  .btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--pin-red);}
+  .btn--ghost{--bg:transparent;--fg:var(--ink);border-color:var(--line-strong);box-shadow:none;}
+  .btn--ghost:hover{background:var(--mist);border-color:var(--slate);transform:translateY(-2px);box-shadow:var(--shadow-sm);}
+  .btn--ghost:focus-visible{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--ink);}
+  .btn--light{--bg:#fff;--fg:var(--ink);}
+  .btn--light:hover{background:#f1eee9;}
+  .btn--lg{padding:1.05rem 1.9rem;font-size:1.05rem;}
+
+  /* ============================== GRAIN ============================== */
+  .grain::after{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity:.05;mix-blend-mode:multiply;
+  }
+
+  /* ============================== NAV ============================== */
+  .nav{
+    position:sticky;top:0;z-index:100;background:rgba(255,255,255,.8);
+    backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid transparent;
+    transition:border-color .3s var(--ease-out),box-shadow .3s var(--ease-out);
+  }
+  .nav.scrolled{border-color:var(--line);box-shadow:var(--shadow-sm);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:66px;}
+  .brand{display:inline-flex;align-items:center;gap:.6rem;font-family:var(--display);font-weight:700;font-size:1.18rem;letter-spacing:-.02em;}
+  .brand img{width:24px;height:auto;}
+  .brand:focus-visible{outline:none;box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--pin-red);border-radius:6px;}
+  .nav-right{display:flex;align-items:center;gap:1.6rem;}
+  .nav-link{position:relative;font-size:.95rem;font-weight:500;color:var(--ink);padding:.25rem 0;}
+  .nav-link::after{content:"";position:absolute;left:0;right:100%;bottom:-2px;height:2px;background:var(--pin-red);transition:right .3s var(--ease-out);}
+  .nav-link:hover::after,.nav-link:focus-visible::after{right:0;}
+  .nav-link:focus-visible{outline:none;color:var(--pin-red);}
+  .nav-right .btn{padding:.92rem 1.55rem;font-size:.95rem;}
+
+  /* ============================== HERO ============================== */
+  .hero{position:relative;padding-top:clamp(3rem,7vw,5rem);padding-bottom:clamp(3rem,7vw,5rem);overflow:hidden;}
+  .hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(60% 50% at 80% 26%, rgba(231,28,35,.10), transparent 70%),
+      radial-gradient(45% 45% at 10% 6%, rgba(246,244,241,.9), transparent 70%),
+      linear-gradient(180deg,#fff 0%, #fdfcfb 60%, var(--mist) 100%);}
+  .hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(2rem,5vw,4rem);align-items:center;}
+  .hero-copy{max-width:540px;}
+  .hero-copy h1{margin-bottom:1.3rem;}
+  .hero-copy h1 .accent{color:var(--pin-red);}
+  .hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem;margin-top:2rem;}
+  .hero-meta{margin-top:1.2rem;color:var(--slate);font-size:.88rem;}
+
+  /* ---- desktop app-window signature ---- */
+  .hero-stage{position:relative;display:flex;justify-content:center;align-items:center;min-height:480px;}
+  .glow{position:absolute;width:84%;height:66%;left:50%;top:52%;transform:translate(-50%,-50%);
+    background:radial-gradient(circle, rgba(231,28,35,.14), transparent 65%);filter:blur(22px);z-index:0;}
+  .app-window{
+    position:relative;z-index:2;width:100%;max-width:560px;border-radius:15px;overflow:hidden;
+    background:var(--paper);border:1px solid var(--line-strong);box-shadow:var(--shadow-float);
+    transform:perspective(1500px) rotateX(2.5deg) rotateY(-1.5deg);
+  }
+  .aw-bar{display:flex;align-items:center;gap:.65rem;height:40px;padding:0 14px;background:#fbfaf8;border-bottom:1px solid var(--line);}
+  .aw-dots{display:flex;gap:7px;}
+  .aw-dots i{width:11px;height:11px;border-radius:50%;}
+  .aw-dots i:nth-child(1){background:#ff5f57;}
+  .aw-dots i:nth-child(2){background:#febc2e;}
+  .aw-dots i:nth-child(3){background:#28c840;}
+  .aw-title{display:flex;align-items:center;gap:.4rem;font-family:var(--display);font-weight:500;font-size:.78rem;color:var(--slate);}
+  .aw-title img{width:13px;height:auto;}
+  .aw-create{margin-left:auto;display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:600;
+    color:#fff;background:var(--pin-red);padding:.34rem .68rem;border-radius:99px;}
+  .aw-create svg{width:.8rem;height:.8rem;}
+  .aw-body{display:flex;height:clamp(290px,33vw,360px);}
+  .aw-side{flex:none;width:40%;max-width:172px;border-right:1px solid var(--line);background:#fcfbf9;padding:11px 9px;overflow:hidden;}
+  .aw-side .lbl{font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);margin:0 0 8px 3px;}
+  .aw-row{display:flex;align-items:center;gap:8px;padding:6px;border-radius:9px;margin-bottom:2px;}
+  .aw-row.active{background:var(--red-wash);}
+  .aw-row .sw{width:21px;height:21px;border-radius:6px;flex:none;overflow:hidden;}
+  .aw-row .nm{min-width:0;line-height:1.15;}
+  .aw-row .nm b{display:block;font-family:var(--display);font-weight:700;font-size:.71rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .aw-row .nm span{display:block;font-size:.59rem;color:var(--slate);white-space:nowrap;}
+  .aw-canvas{position:relative;flex:1;overflow:hidden;background:radial-gradient(125% 120% at 28% 18%, #e9e5f6, #dbd5ef 58%, #cbc4e7);}
+  .aw-tools{position:absolute;top:11px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:3px;
+    background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:10px;padding:3px;box-shadow:var(--shadow-sm);}
+  .aw-tools span{font-size:.64rem;font-weight:600;color:var(--slate);padding:.2rem .5rem;border-radius:7px;}
+  .aw-tools span.on{background:var(--ink);color:#fff;}
+  .frames{position:absolute;inset:0;z-index:2;}
+  .pf{position:absolute;background:#fff;padding:6px;border-radius:5px;box-shadow:0 9px 24px rgba(28,22,55,.22);
+    opacity:0;transform:scale(.85) translateY(12px) rotate(var(--r,0deg));animation:pfIn .7s var(--ease-spring) forwards;}
+  .pf .img{width:100%;height:100%;border-radius:3px;overflow:hidden;}
+  .pf.p1{width:40%;aspect-ratio:4/3;left:11%;top:25%;--r:-8deg;z-index:2;animation-delay:.12s;}
+  .pf.p2{width:31%;aspect-ratio:3/4;left:38%;top:12%;--r:5deg;z-index:4;padding-bottom:16px;animation-delay:.22s;}
+  .pf.p3{width:30%;aspect-ratio:1;left:28%;top:50%;--r:-4deg;z-index:3;animation-delay:.32s;}
+  .pf.p4{width:31%;aspect-ratio:1;left:56%;top:48%;--r:7deg;z-index:2;animation-delay:.42s;}
+  @keyframes pfIn{to{opacity:1;transform:scale(1) translateY(0) rotate(var(--r,0deg));}}
+
+  .float{position:absolute;z-index:6;display:flex;align-items:center;gap:.55rem;
+    background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:.5rem .75rem;box-shadow:var(--shadow-lg);
+    animation:floaty 6s ease-in-out infinite;}
+  .float .ico{width:27px;height:27px;border-radius:8px;flex:none;display:grid;place-items:center;background:var(--red-wash);color:var(--pin-red);}
+  .float .ico svg{width:15px;height:15px;}
+  .float .ft{line-height:1.18;}
+  .float .ft b{display:block;font-family:var(--display);font-weight:700;font-size:.76rem;color:var(--ink);}
+  .float .ft span{display:block;font-size:.66rem;color:var(--slate);}
+  .float.f1{top:-5%;right:-4%;animation-delay:0s;}
+  .float.f2{bottom:-4%;left:-5%;animation-delay:-3s;}
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+
+  /* ============================== GUIDE / HOW TO USE ============================== */
+  .guide{padding:clamp(4rem,9vw,7rem) 0;border-top:1px solid var(--line);background:linear-gradient(180deg,#fff,#fdfcfb);}
+  .guide-head{max-width:640px;}
+  .guide-head .lead{margin-top:.4rem;}
+  .steps{display:flex;flex-direction:column;gap:clamp(3.5rem,8vw,6.5rem);margin-top:clamp(2.5rem,5vw,4rem);}
+  .stp{display:grid;grid-template-columns:.92fr 1.08fr;gap:clamp(2rem,5vw,4.5rem);align-items:center;}
+  .stp.flip .stp-vis{order:-1;}
+  .stp-num{display:inline-flex;align-items:center;gap:.55rem;font-family:var(--display);font-weight:700;
+    color:var(--pin-red);font-size:.88rem;letter-spacing:.04em;margin-bottom:1.1rem;}
+  .stp-num::before{counter-increment:stp;content:"0" counter(stp);}
+  .stp-num::after{content:"";width:34px;height:1px;background:linear-gradient(90deg,var(--pin-red),transparent);}
+  .steps{counter-reset:stp;}
+  .stp-text h3{font-size:clamp(1.5rem,2.6vw,1.95rem);line-height:1.12;letter-spacing:-.025em;margin-bottom:.75rem;}
+  .stp-text p{color:var(--slate);font-size:1.05rem;line-height:1.7;max-width:44ch;margin:0;}
+  .stp-text .tip{display:flex;align-items:flex-start;gap:.55rem;margin-top:1.3rem;font-size:.92rem;color:var(--ink);
+    background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:.75rem .9rem;max-width:42ch;}
+  .stp-text .tip svg{width:1.05rem;height:1.05rem;flex:none;color:var(--pin-red);margin-top:.1rem;}
+  .stp-text .tip b{font-weight:600;}
+
+  /* shot = framed UI illustration */
+  .shot{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:18px;
+    box-shadow:var(--shadow-lg);padding:16px;}
+
+  /* step 1 - sources panel */
+  .sp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .sp-head b{font-family:var(--display);font-size:1.02rem;}
+  .sp-add{display:inline-flex;align-items:center;gap:.3rem;font-size:.74rem;font-weight:600;color:var(--pin-red);
+    background:var(--red-wash);padding:.34rem .62rem;border-radius:8px;}
+  .sp-tabs{display:flex;gap:6px;margin-bottom:10px;}
+  .sp-tabs span{font-size:.74rem;font-weight:600;color:var(--slate);padding:.32rem .75rem;border-radius:8px;}
+  .sp-tabs span.on{background:var(--ink);color:#fff;}
+  .shot .aw-row{padding:9px 8px;margin-bottom:4px;border-radius:11px;}
+  .shot .aw-row.active{background:var(--red-wash);}
+  .shot .aw-row .sw{width:30px;height:30px;border-radius:8px;}
+  .shot .aw-row .nm b{font-size:.86rem;}
+  .shot .aw-row .nm span{font-size:.72rem;}
+  .aw-row.linking .nm span{color:var(--pin-red);font-weight:600;}
+  .aw-row .spin{margin-left:auto;width:14px;height:14px;border:2px solid var(--red-wash);border-top-color:var(--pin-red);border-radius:50%;animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* step 2 - canvas with placeholders */
+  .cv{position:relative;border-radius:13px;padding:13px;background:radial-gradient(125% 120% at 28% 18%, #e9e5f6, #dbd5ef 60%, #cbc4e7);}
+  .cv-top{display:flex;margin-bottom:6px;}
+  .cv-add{display:inline-flex;align-items:center;gap:.4rem;font-size:.74rem;font-weight:600;color:#fff;background:var(--ink);padding:.4rem .72rem;border-radius:9px;box-shadow:var(--shadow-sm);}
+  .cv-add svg{width:.85rem;height:.85rem;}
+  .cv-stage{position:relative;height:230px;}
+  .cv-stage .pf{animation:none;opacity:1;transform:rotate(var(--r,0deg));}
+  .cv-stage .pf.a{width:36%;aspect-ratio:1;left:10%;top:16%;--r:-6deg;z-index:2;}
+  .cv-stage .pf.b{width:33%;aspect-ratio:3/4;left:40%;top:34%;--r:5deg;z-index:3;}
+  .placeholder{position:absolute;right:8%;top:14%;width:32%;aspect-ratio:4/5;border-radius:9px;z-index:1;
+    border:2px dashed rgba(255,255,255,.85);background:rgba(255,255,255,.2);display:grid;place-items:center;}
+  .placeholder b{font-family:var(--display);font-weight:700;font-size:.72rem;color:#fff;text-align:center;opacity:.92;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .placeholder b span{font-size:1.5rem;line-height:.7;}
+
+  /* step 3 - properties panel */
+  .pp{display:grid;grid-template-columns:1.05fr .95fr;gap:13px;align-items:stretch;}
+  .pp-stage{border-radius:12px;display:grid;place-items:center;padding:16px;background:radial-gradient(125% 120% at 28% 18%, #e9e5f6, #dbd5ef 60%, #cbc4e7);}
+  .pp-stage .pf{position:relative;animation:none;opacity:1;transform:rotate(-3deg);width:74%;aspect-ratio:4/5;}
+  .pp-panel{display:flex;flex-direction:column;gap:11px;}
+  .pp-tabs{display:flex;gap:6px;}
+  .pp-tabs span{font-size:.72rem;font-weight:600;color:var(--slate);padding:.3rem .6rem;border-radius:7px;}
+  .pp-tabs span.on{background:var(--ink);color:#fff;}
+  .pp-seg{display:flex;background:var(--mist);border:1px solid var(--line);border-radius:9px;padding:3px;}
+  .pp-seg span{flex:1;text-align:center;font-size:.71rem;font-weight:600;color:var(--slate);padding:.34rem;border-radius:6px;}
+  .pp-seg span.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);}
+  .pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .pp-field label{display:block;font-size:.6rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--slate);margin-bottom:4px;}
+  .pp-field .val{border:1px solid var(--line-strong);border-radius:7px;padding:.32rem .55rem;font-size:.8rem;font-weight:600;color:var(--ink);}
+  .pp-field .val.sel{display:flex;align-items:center;}
+  .pp-field .val.sel::after{content:"";margin-left:auto;width:6px;height:6px;border-right:2px solid var(--slate);border-bottom:2px solid var(--slate);transform:rotate(45deg) translateY(-1px);}
+  .pp-row label{display:block;font-size:.6rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--slate);margin-bottom:7px;}
+  .pp-slider{height:5px;background:var(--line-strong);border-radius:99px;position:relative;}
+  .pp-slider i{position:absolute;left:74%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid var(--line-strong);box-shadow:var(--shadow-sm);}
+  .pp-slider::before{content:"";position:absolute;left:0;top:0;bottom:0;width:74%;background:var(--pin-red);border-radius:99px;}
+
+  /* step 4 - create the set */
+  .cr-bar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:15px;}
+  .cr-pill{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;font-weight:600;padding:.5rem .85rem;border-radius:10px;}
+  .cr-pill svg{width:.95rem;height:.95rem;}
+  .cr-ghost{color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);}
+  .cr-primary{color:#fff;background:var(--pin-red);}
+  .cr-result{display:flex;flex-direction:column;gap:16px;}
+  .mini-monitor{width:100%;}
+  .mini-monitor .mm{width:100%;aspect-ratio:16/9;background:linear-gradient(160deg,#26262a,#0b0b0d);border-radius:12px;padding:8px;box-shadow:var(--shadow-md);}
+  .mini-monitor .mm .scr{position:relative;width:100%;height:100%;border-radius:6px;overflow:hidden;
+    background:radial-gradient(120% 130% at 28% 18%,#f7f1e8,#ecdfd0 56%,#d8c4af);}
+  .mini-monitor .mm .scr::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)' opacity='0.6'/%3E%3C/svg%3E");opacity:.06;mix-blend-mode:multiply;}
+  .mini-monitor .photo{position:absolute;z-index:2;background:#fff;padding:5px;border-radius:4px;
+    box-shadow:0 5px 14px rgba(45,33,22,.24);transform:rotate(var(--r,0deg));}
+  .mini-monitor .photo .t{display:block;width:100%;height:100%;border-radius:2px;}
+  .mini-monitor .photo::after{content:"";position:absolute;top:-4px;left:50%;width:10px;height:13px;z-index:3;
+    transform:translateX(-50%);background:var(--pin-red);
+    -webkit-mask:url("assets/pin-red.png") center/contain no-repeat;mask:url("assets/pin-red.png") center/contain no-repeat;
+    filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.32));}
+  .mini-monitor .photo.p1{width:30%;aspect-ratio:4/5;left:7%;top:15%;--r:-7deg;z-index:3;}
+  .mini-monitor .photo.p2{width:27%;aspect-ratio:1;left:35%;top:8%;--r:5deg;z-index:4;}
+  .mini-monitor .photo.p3{width:29%;aspect-ratio:4/3;left:41%;top:43%;--r:-3deg;z-index:5;}
+  .mini-monitor .photo.p4{width:25%;aspect-ratio:3/4;left:67%;top:20%;--r:8deg;z-index:3;}
+  .mini-monitor .photo.p5{width:24%;aspect-ratio:1;left:15%;top:53%;--r:-9deg;z-index:4;}
+  .mini-monitor .stand{width:13px;height:20px;margin:0 auto;background:linear-gradient(180deg,#cdc8d3,#a39daf);position:relative;}
+  .mini-monitor .stand::after{content:"";position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);width:66px;height:6px;border-radius:99px;background:#aaa4b2;}
+  .cr-meta{flex:1;min-width:170px;}
+  .cr-meta .big{font-family:var(--display);font-weight:700;font-size:1.5rem;color:var(--ink);line-height:1;}
+  .cr-meta .sub{font-size:.9rem;color:var(--slate);margin-top:.35rem;}
+  .cr-chips{display:flex;flex-direction:column;align-items:flex-start;gap:.55rem;margin-top:1.05rem;}
+  .cr-chip{display:inline-flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:600;color:var(--ink);
+    background:var(--red-wash);border:1px solid #f3cccf;padding:.45rem .78rem;border-radius:99px;}
+  .cr-chip svg{width:1rem;height:1rem;color:var(--pin-red);flex:none;}
+  .cr-chip.rotate svg{animation:spin 6s linear infinite;}
+  .res-chip{display:inline-flex;align-items:center;gap:.7rem;padding:.62rem .9rem;
+    border:1px solid var(--line-strong);border-radius:13px;background:var(--paper);box-shadow:var(--shadow-sm);}
+  .res-chip > svg{width:1.45rem;height:1.45rem;color:var(--pin-red);flex:none;}
+  .res-info b{display:block;font-family:var(--display);font-weight:700;font-size:1.02rem;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:.01em;white-space:nowrap;}
+  .res-info span{display:block;font-size:.72rem;color:var(--slate);margin-top:2px;white-space:nowrap;}
+
+  /* ============================== FINAL CTA ============================== */
+  .cta-band{padding:clamp(4rem,8vw,6rem) 0;}
+  .cta-card{position:relative;overflow:hidden;border-radius:30px;background:var(--pin-red);color:#fff;
+    padding:clamp(2.6rem,6vw,4.5rem);text-align:center;box-shadow:var(--shadow-lg);}
+  .cta-card::before{content:"";position:absolute;inset:0;z-index:0;
+    background:radial-gradient(60% 80% at 80% 0%, rgba(255,255,255,.18), transparent 60%),
+               radial-gradient(50% 70% at 10% 100%, rgba(176,20,26,.6), transparent 60%);}
+  .cta-card > *{position:relative;z-index:2;}
+  .cta-card .pin-mark{width:44px;margin:0 auto 1.3rem;}
+  .cta-card h2{color:#fff;margin-bottom:.8rem;}
+  .cta-card p{color:rgba(255,255,255,.86);max-width:480px;margin:0 auto 2rem;font-size:1.06rem;}
+  .cta-actions{display:flex;flex-wrap:wrap;gap:.9rem;justify-content:center;}
+  .cta-card .meta{color:rgba(255,255,255,.8);margin-top:1.3rem;font-size:.88rem;}
+  .cta-card .meta b{color:#fff;font-weight:600;}
+
+  /* ============================== FOOTER ============================== */
+  footer{padding:clamp(2.5rem,5vw,3.5rem) 0;background:var(--ink);color:rgba(255,255,255,.55);}
+  .foot-inner{display:flex;justify-content:space-between;align-items:center;gap:1.5rem;flex-wrap:wrap;}
+  .foot-inner .brand{color:#fff;}
+  .foot-inner .brand img{width:22px;}
+  .foot-links{display:flex;gap:1.6rem;flex-wrap:wrap;}
+  .foot-links a{font-size:.9rem;color:rgba(255,255,255,.6);transition:color .2s var(--ease-out);}
+  .foot-links a:hover{color:#fff;}
+  .foot-links a:focus-visible{outline:none;color:var(--pin-red);}
+  .foot-copy{font-size:.84rem;}
+
+  /* ============================== TILES ============================== */
+  .t{position:relative;background-color:#bdae9d;overflow:hidden;}
+  .t::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity:.07;mix-blend-mode:overlay;}
+  .t1{background:radial-gradient(120% 120% at 20% 10%,#ffd9a8,#f7a072 45%,#c75c4b 100%);}
+  .t2{background:linear-gradient(160deg,#e9eee6,#b9c9b4 55%,#7c9a82);}
+  .t3{background:radial-gradient(130% 100% at 80% 20%,#f6dbe4,#e0a9bf 50%,#9d6a86);}
+  .t4{background:linear-gradient(155deg,#cfe0ec,#9bb8d3 50%,#5f7d9c);}
+  .t5{background:radial-gradient(120% 120% at 30% 80%,#fbe7c6,#e8b06a 55%,#b9742f);}
+  .t6{background:linear-gradient(160deg,#efe7df,#d8c3ad 60%,#a98f74);}
+  .t7{background:radial-gradient(120% 120% at 70% 30%,#f3c1b4,#e1746b 55%,#aa2e2e);}
+  .t8{background:linear-gradient(150deg,#dfd6ea,#b4a3cf 55%,#7c6699);}
+  .t9{background:radial-gradient(130% 110% at 20% 20%,#fff0d6,#f3c969 50%,#d39a3a);}
+  .t10{background:linear-gradient(160deg,#d4e7e4,#9ec9c2 55%,#5e928c);}
+  .t11{background:radial-gradient(120% 120% at 80% 80%,#fcd9d3,#ef9d8e 50%,#c4503e);}
+  .t12{background:linear-gradient(155deg,#1a1c22,#33373f 60%,#5a6070);}
+  .t13{background:radial-gradient(120% 120% at 40% 20%,#f7ead9,#dcae84 55%,#a06b3f);}
+  .t14{background:linear-gradient(160deg,#e7e2db,#c4bcae 55%,#8f8675);}
+
+  /* ============================== REVEAL ============================== */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease-out),transform .7s var(--ease-out);}
+  .reveal.in{opacity:1;transform:none;}
+
+  /* ============================== RESPONSIVE ============================== */
+  @media(max-width:960px){
+    .hero-grid{grid-template-columns:1fr;}
+    .hero-copy{max-width:none;}
+    .hero-stage{order:-1;min-height:auto;margin-bottom:1.5rem;}
+    .app-window{transform:none;}
+    .stp{grid-template-columns:1fr;gap:1.8rem;}
+    .stp.flip .stp-vis{order:0;}
+    .stp-text p,.stp-text .tip{max-width:none;}
+  }
+  @media(max-width:560px){
+    .float.f1{right:-1%;}.float.f2{left:-1%;}
+    .nav-link{display:none;}
+    .pp{grid-template-columns:1fr;}
+    .mini-monitor .mm{width:200px;}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+    .pf{opacity:1;transform:rotate(var(--r,0deg));}
+    .reveal{opacity:1;transform:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================== NAV ============================== -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="Pin Paper home">
+      <img src="assets/pin-red.png" alt="" />
+      <span>Pin&nbsp;Paper</span>
+    </a>
+    <nav class="nav-right" aria-label="Primary">
+      <a class="nav-link" href="#how">How it works</a>
+      <a class="btn" href="#download">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============================== HERO ============================== -->
+<section class="hero grain" id="hero">
+  <div class="hero-bg"></div>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow">Pin it. Keep it.</span>
+      <h1 class="h1">Your boards,<br>transformed into <span class="accent">desktop wallpaper.</span></h1>
+      <p class="lead">Pin Paper is a Mac and Windows app for turning your Pinterest boards and local folders into custom desktop wallpapers. Link a board or pick a folder, lay out image frames on a canvas, and generate a wallpaper set sized for your screen.</p>
+      <div class="hero-actions">
+        <a class="btn" href="/download/mac" data-download="mac" aria-label="Download Pin Paper for macOS">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.36 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.75 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.43-3.62zM14.13 5.6c.64-.78 1.07-1.85.95-2.93-.92.04-2.04.61-2.7 1.38-.59.69-1.11 1.79-.97 2.85 1.03.08 2.08-.52 2.72-1.3z"/></svg>
+          Download for Mac
+        </a>
+        <a class="btn btn--ghost" href="/download/windows" data-download="windows" aria-label="Download Pin Paper for Windows">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+          Download for Windows
+        </a>
+      </div>
+      <div class="hero-meta">Free · macOS &amp; Windows</div>
+    </div>
+
+    <div class="hero-stage">
+      <div class="glow"></div>
+      <div class="app-window" aria-hidden="true">
+        <div class="aw-bar">
+          <div class="aw-dots"><i></i><i></i><i></i></div>
+          <div class="aw-title"><img src="assets/pin-red.png" alt="" />Untitled Template</div>
+          <span class="aw-create">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+            Create Set
+          </span>
+        </div>
+        <div class="aw-body">
+          <div class="aw-side">
+            <p class="lbl">Sources · Linked</p>
+            <div class="aw-row active"><span class="sw t3"></span><span class="nm"><b>Golden Hour</b><span>Pinterest · 21</span></span></div>
+            <div class="aw-row"><span class="sw t9"></span><span class="nm"><b>Dark Academia</b><span>Pinterest · 117</span></span></div>
+            <div class="aw-row"><span class="sw t2"></span><span class="nm"><b>Cottagecore</b><span>Pinterest · 51</span></span></div>
+            <div class="aw-row"><span class="sw t5"></span><span class="nm"><b>Coastal Calm</b><span>Pinterest · 38</span></span></div>
+            <div class="aw-row"><span class="sw t8"></span><span class="nm"><b>Neon Nights</b><span>Pinterest · 240</span></span></div>
+          </div>
+          <div class="aw-canvas">
+            <div class="aw-tools"><span class="on">Fill</span><span>Fit</span><span>Crop</span></div>
+            <div class="frames">
+              <div class="pf p1"><div class="img t t4"></div></div>
+              <div class="pf p2"><div class="img t t8"></div></div>
+              <div class="pf p3"><div class="img t t3"></div></div>
+              <div class="pf p4"><div class="img t t10"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="float f1">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <span class="ft"><b>Wallpaper set ready</b><span>Cycling · none repeat</span></span>
+      </div>
+      <div class="float f2">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span>
+        <span class="ft"><b>Preview on your desktop</b><span class="js-res">1920 × 1080</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== HOW IT WORKS ============================== -->
+<section class="guide" id="how">
+  <div class="wrap">
+    <div class="guide-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2 class="h2">From a board to a desktop<br>full of wallpapers.</h2>
+      <p class="lead">Pin Paper works like a canvas. You link your boards, lay out image frames, shape them, and let it build the set. Here's the whole flow, start to finish.</p>
+    </div>
+
+    <div class="steps">
+
+      <!-- STEP 1 -->
+      <div class="stp reveal">
+        <div class="stp-text">
+          <div class="stp-num"></div>
+          <h3>Link a board or a folder</h3>
+          <p>Open Sources and choose Add Source. Paste a Pinterest board link or pick a folder on your computer, and Pin Paper pulls in every image as a pool you can use. Add as many sources as you want; they stack up in your library.</p>
+          <div class="tip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>
+            <span>Pin Paper imports the whole board or folder at once. No saving images one by one.</span>
+          </div>
+        </div>
+        <div class="stp-vis">
+          <div class="shot">
+            <div class="sp-head">
+              <b>Sources</b>
+              <span class="sp-add"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>Add Source</span>
+            </div>
+            <div class="sp-tabs"><span class="on">Linked</span><span>Library</span></div>
+            <div class="aw-row active"><span class="sw t3"></span><span class="nm"><b>Golden Hour</b><span>Pinterest · 21 images</span></span></div>
+            <div class="aw-row"><span class="sw t9"></span><span class="nm"><b>Dark Academia</b><span>Pinterest · 117 images</span></span></div>
+            <div class="aw-row"><span class="sw t2"></span><span class="nm"><b>Wallpapers</b><span>Folder · 64 images</span></span></div>
+            <div class="aw-row linking"><span class="sw t5"></span><span class="nm"><b>Coastal Calm</b><span>Linking board…</span></span><span class="spin"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="stp flip reveal">
+        <div class="stp-text">
+          <div class="stp-num"></div>
+          <h3>Lay out frames on the canvas</h3>
+          <p>Add a frame for each image you want, then drag the frames into the arrangement you like. Drop a single pin into a frame, or assign a whole board and let Pin Paper fill it.</p>
+          <div class="tip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20" opacity=".5"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg>
+            <span>Move, resize, and reorder frames freely. The layout is yours to shape.</span>
+          </div>
+        </div>
+        <div class="stp-vis">
+          <div class="shot">
+            <div class="cv">
+              <div class="cv-top">
+                <span class="cv-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>Add Frame</span>
+              </div>
+              <div class="cv-stage">
+                <div class="pf a"><div class="img t t1"></div></div>
+                <div class="pf b"><div class="img t t8"></div></div>
+                <div class="placeholder"><b><span>+</span>Drop image</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="stp reveal">
+        <div class="stp-text">
+          <div class="stp-num"></div>
+          <h3>Customize each frame</h3>
+          <p>This is what makes a wallpaper feel like a board, not a screenshot. Turn flat images into pinned-up prints: Polaroid frames or torn-paper edges, effects, and soft drop shadows.</p>
+          <div class="tip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+            <span>Polaroid, torn paper, textures, and shadows, all set per photo.</span>
+          </div>
+        </div>
+        <div class="stp-vis">
+          <div class="shot">
+            <div class="pp">
+              <div class="pp-stage"><div class="pf"><div class="img t t3"></div></div></div>
+              <div class="pp-panel">
+                <div class="pp-tabs"><span>Image</span><span class="on">Effects</span></div>
+                <div class="pp-field"><label>Paper</label><div class="val sel">Polaroid</div></div>
+                <div class="pp-grid">
+                  <div class="pp-field"><label>Texture</label><div class="val">Paper</div></div>
+                  <div class="pp-field"><label>Blend</label><div class="val">Normal</div></div>
+                </div>
+                <div class="pp-row"><label>Drop shadow</label><div class="pp-slider"><i></i></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="stp flip reveal">
+        <div class="stp-text">
+          <div class="stp-num"></div>
+          <h3>Preview, then create the set</h3>
+          <p>Try the layout right on your desktop, then choose Create Wallpaper Set. Pin Paper renders a set from your boards and cycles through it on your desktop. Every wallpaper is different, none repeating, sized for your screen.</p>
+          <div class="tip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.6"/><path d="M21 4v5h-5"/></svg>
+            <span>Save the layout as a template and regenerate a fresh set anytime.</span>
+          </div>
+        </div>
+        <div class="stp-vis">
+          <div class="shot">
+            <div class="cr-result">
+              <div class="mini-monitor">
+                <div class="mm"><div class="scr">
+                  <div class="photo p1"><span class="t t1"></span></div>
+                  <div class="photo p2"><span class="t t3"></span></div>
+                  <div class="photo p4"><span class="t t8"></span></div>
+                  <div class="photo p5"><span class="t t13"></span></div>
+                  <div class="photo p3"><span class="t t9"></span></div>
+                </div></div>
+                <div class="stand"></div>
+              </div>
+              <div class="cr-meta">
+                <div class="big">A set that rotates</div>
+                <div class="sub">Pin Paper builds a wallpaper set from your boards and cycles through it on your desktop. Every one is different, none repeating.</div>
+                <div class="cr-chips">
+                  <div class="cr-chip rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-6.2-8.6"/><path d="M21 3v6h-6"/></svg>Auto-cycles on your desktop</div>
+                  <div class="res-chip">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    <div class="res-info"><b class="js-res">2560 × 1440</b><span>Matched to your display</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== DOWNLOAD ============================== -->
+<section class="cta-band" id="download">
+  <div class="wrap">
+    <div class="cta-card grain reveal">
+      <img class="pin-mark" src="assets/pin-white.png" alt="" aria-hidden="true" />
+      <h2 class="h2">Make your first wallpaper set.</h2>
+      <p>Download Pin Paper, link a board, and you'll have a desktop full of wallpapers in a few minutes.</p>
+      <div class="cta-actions">
+        <a class="btn btn--lg btn--light" href="/download/mac" data-download="mac" aria-label="Download Pin Paper for macOS">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.36 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.75 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.76-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.43-3.62zM14.13 5.6c.64-.78 1.07-1.85.95-2.93-.92.04-2.04.61-2.7 1.38-.59.69-1.11 1.79-.97 2.85 1.03.08 2.08-.52 2.72-1.3z"/></svg>
+          Download for Mac
+        </a>
+        <a class="btn btn--lg btn--light" href="/download/windows" data-download="windows" aria-label="Download Pin Paper for Windows">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+          Download for Windows
+        </a>
+      </div>
+      <p class="meta">Free · <b>macOS 12+</b> and <b>Windows 10+</b></p>
+      <p class="meta" id="dlCount" hidden style="margin-top:.5rem"></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================== FOOTER ============================== -->
+<footer>
+  <div class="wrap foot-inner">
+    <a class="brand" href="#top"><img src="assets/pin-white.png" alt="" /><span>Pin&nbsp;Paper</span></a>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="#how">How it works</a>
+      <a href="#download">Download</a>
+      <a href="#">Help</a>
+    </nav>
+    <span class="foot-copy">© 2026 Pin Paper · Pin it. Keep it.</span>
+  </div>
+</footer>
+
+<script>
+  const nav = document.getElementById('nav');
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, {passive:true});
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Show the visitor's own display resolution, so the specs read as "sized to your screen"
+  (function(){
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.round(screen.width * dpr), h = Math.round(screen.height * dpr);
+    if (w && h) document.querySelectorAll('.js-res').forEach(el => el.textContent = w + ' × ' + h);
+  })();
+
+  // Download tracking: show a live count, and fire analytics events on click
+  (function(){
+    const el = document.getElementById('dlCount');
+    if (el) {
+      fetch('/api/downloads').then(r => r.ok ? r.json() : null).then(d => {
+        if (d && d.total > 0) {
+          el.innerHTML = '<b>' + d.total.toLocaleString() + '</b> downloads and counting';
+          el.hidden = false;
+        }
+      }).catch(() => {});
+    }
+    document.querySelectorAll('[data-download]').forEach(a => {
+      a.addEventListener('click', () => {
+        const platform = a.getAttribute('data-download');
+        if (window.gtag) window.gtag('event', 'download', { platform });        // Google Analytics
+        if (window.dataLayer) window.dataLayer.push({ event: 'download', platform }); // GTM
+      });
+    });
+  })();
+</script>
+</body>
+</html>
