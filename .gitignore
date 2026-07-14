@@ -1,6 +1,11 @@
 # Runtime data (download counter)
 download-stats.json
 
+# Installer binaries — too big for git/Vercel; uploaded as GitHub Release assets instead
+*.exe
+*.dmg
+*.dmg.sha256
+
 # macOS
 .DS_Store
 
