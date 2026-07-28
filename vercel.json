@@ -2,12 +2,12 @@
   "redirects": [
     {
       "source": "/download/mac",
-      "destination": "https://github.com/rayz1459/pinpaperwebsite/releases/download/v0.1.0/Pin-Paper-macOS-v0.1.0-arm64-unsigned.dmg",
+      "destination": "https://github.com/hyweric/Pinterest-Wallpaper-Compiler/releases/download/v0.1.6/Pin.Paper-0.1.6-arm64.dmg",
       "permanent": false
     },
     {
       "source": "/download/windows",
-      "destination": "https://github.com/rayz1459/pinpaperwebsite/releases/download/v0.1.0/Pin.Paper.Setup.0.1.0.exe",
+      "destination": "https://github.com/hyweric/Pinterest-Wallpaper-Compiler/releases/download/v0.1.6/Pin.Paper.Setup.0.1.6.exe",
       "permanent": false
     }
   ]
