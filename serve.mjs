@@ -8,8 +8,8 @@ const PORT = 3000;
 // --- Real installer links. Fill these in (or set the env vars) when you have them. ---
 // While empty, a download click is still COUNTED, but the visitor just stays on the page.
 const DOWNLOAD_URLS = {
-  mac: process.env.PINPAPER_MAC_URL || 'https://github.com/hyweric/Pinterest-Wallpaper-Compiler/releases/download/v0.1.6/Pin.Paper-0.1.6-arm64.dmg',
-  windows: process.env.PINPAPER_WIN_URL || 'https://github.com/hyweric/Pinterest-Wallpaper-Compiler/releases/download/v0.1.6/Pin.Paper.Setup.0.1.6.exe',
+  mac: process.env.PINPAPER_MAC_URL || 'https://github.com/rayz1459/pinpaperwebsite/releases/download/v0.1.0/Pin-Paper-macOS-v0.1.0-arm64-unsigned.dmg',
+  windows: process.env.PINPAPER_WIN_URL || 'https://github.com/rayz1459/pinpaperwebsite/releases/download/v0.1.0/Pin.Paper.Setup.0.1.0.exe',
 };
 
 // --- Download counter, persisted to download-stats.json so it survives restarts ---
