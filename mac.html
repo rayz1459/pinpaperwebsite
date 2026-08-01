@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Opening Pin Paper on macOS</title>
+<meta name="description" content="Your Pin Paper download is starting. Because the Mac app isn't yet notarized by Apple, macOS blocks it the first time — here's how to open it in a few clicks via System Settings › Privacy & Security." />
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="apple-touch-icon" href="assets/favicon-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --pin-red:#E71C23;
+    --red-deep:#B0141A;
+    --red-wash:#FCEBEC;
+    --ink:#0A0A0A;
+    --paper:#FFFFFF;
+    --mist:#F6F4F1;
+    --slate:#6C6C72;
+    --line:#ECE9E4;
+    --line-strong:#E0DCD5;
+    --display:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --maxw:760px;
+    --gutter:clamp(20px,5vw,40px);
+    --ease-out:cubic-bezier(.16,1,.3,1);
+    --shadow-sm:0 1px 2px rgba(10,10,10,.04), 0 2px 6px rgba(10,10,10,.05);
+    --shadow-md:0 4px 10px rgba(10,10,10,.05), 0 14px 30px rgba(176,20,26,.07);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;font-family:var(--body);color:var(--ink);background:var(--mist);
+    line-height:1.65;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  img{display:block;max-width:100%;}
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--pin-red);color:#fff;}
+
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter);}
+
+  /* --- top bar --- */
+  .top{padding:22px 0;}
+  .brand{display:inline-flex;align-items:center;gap:.55rem;font-family:var(--display);font-weight:700;letter-spacing:-.01em;}
+  .brand img{width:26px;height:26px;}
+  .back{float:right;font-size:.9rem;color:var(--slate);font-weight:500;}
+  .back:hover{color:var(--ink);}
+
+  /* --- card --- */
+  main{padding:8px 0 72px;}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:22px;
+    padding:clamp(26px,5vw,44px);box-shadow:var(--shadow-md);
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:.5rem;font-weight:600;
+    font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--pin-red);margin:0 0 .9rem;
+  }
+  h1{font-family:var(--display);font-weight:700;letter-spacing:-.02em;line-height:1.1;
+    font-size:clamp(1.7rem,4.5vw,2.3rem);margin:0 0 .6rem;}
+  .lead{color:var(--slate);font-size:1.02rem;margin:0 0 1.6rem;}
+
+  /* --- download status --- */
+  .dl-status{
+    display:flex;flex-wrap:wrap;align-items:center;gap:.9rem;
+    background:var(--red-wash);border:1px solid #F6D6D8;border-radius:14px;
+    padding:14px 16px;margin:0 0 1.4rem;
+  }
+  .dl-status .spin{
+    width:20px;height:20px;border-radius:50%;flex:none;
+    border:2.5px solid #F1B9BC;border-top-color:var(--pin-red);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .dl-status p{margin:0;font-size:.95rem;}
+  .dl-status b{font-weight:600;}
+  .dl-status .again{color:var(--pin-red);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:.55rem;font-family:var(--body);font-weight:600;
+    font-size:1rem;padding:.85rem 1.4rem;border-radius:12px;cursor:pointer;
+    background:var(--ink);color:#fff;border:1px solid var(--ink);transition:transform .2s var(--ease-out),box-shadow .2s var(--ease-out);
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);}
+  .btn svg{width:18px;height:18px;}
+
+  /* --- steps --- */
+  h2{font-family:var(--display);font-weight:700;letter-spacing:-.01em;font-size:1.25rem;margin:2.2rem 0 .3rem;}
+  .sub{color:var(--slate);font-size:.92rem;margin:0 0 1.1rem;}
+
+  ol.steps{list-style:none;counter-reset:step;margin:0;padding:0;}
+  ol.steps>li{
+    counter-increment:step;position:relative;padding:0 0 1.15rem 3rem;
+  }
+  ol.steps>li::before{
+    content:counter(step);position:absolute;left:0;top:-2px;
+    width:2rem;height:2rem;border-radius:50%;display:grid;place-items:center;
+    background:var(--ink);color:#fff;font-weight:600;font-size:.9rem;font-variant-numeric:tabular-nums;
+  }
+  ol.steps>li:not(:last-child)::after{
+    content:"";position:absolute;left:calc(1rem - 1px);top:2.1rem;bottom:.35rem;width:2px;background:var(--line-strong);
+  }
+  ol.steps strong{font-weight:600;}
+  .pill{
+    display:inline-block;padding:.05rem .5rem;border-radius:7px;background:var(--mist);
+    border:1px solid var(--line-strong);font-weight:600;font-size:.92em;white-space:nowrap;
+  }
+
+  .note{
+    margin:1.5rem 0 0;padding:14px 16px;border-radius:12px;
+    background:var(--mist);border:1px solid var(--line);font-size:.92rem;color:var(--slate);
+  }
+  .note b{color:var(--ink);}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;
+    background:#0A0A0A;color:#fff;padding:.15rem .45rem;border-radius:6px;
+  }
+  .code-block{
+    display:block;margin:.6rem 0 0;padding:12px 14px;background:#0A0A0A;color:#fff;
+    border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;
+    overflow-x:auto;white-space:pre;
+  }
+  details{margin-top:1.5rem;border-top:1px solid var(--line);padding-top:1.2rem;}
+  summary{font-family:var(--display);font-weight:700;font-size:1.05rem;cursor:pointer;list-style:none;}
+  summary::-webkit-details-marker{display:none;}
+  summary::before{content:"›";display:inline-block;margin-right:.5rem;transition:transform .2s var(--ease-out);color:var(--pin-red);font-weight:700;}
+  details[open] summary::before{transform:rotate(90deg);}
+  details p{margin:.8rem 0 0;font-size:.95rem;}
+
+  footer{color:var(--slate);font-size:.85rem;padding:0 0 40px;text-align:center;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/"><img src="assets/pin-red.png" alt="" />Pin&nbsp;Paper</a>
+    <a class="back" href="/">← Back to site</a>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="card">
+      <span class="eyebrow">macOS install</span>
+      <h1>Your download is starting…</h1>
+      <p class="lead">Because Pin Paper isn't notarized by Apple yet, macOS blocks it the very first time you open it. It's completely safe — you just need to allow it once. Here's how.</p>
+
+      <div class="dl-status">
+        <span class="spin" aria-hidden="true"></span>
+        <p><b>Downloading Pin&nbsp;Paper for Mac.</b> If it doesn't begin automatically, <a class="again" id="dlAgain" href="/download/mac">click here to download</a>.</p>
+      </div>
+
+      <h2>Open it in 5 steps</h2>
+      <p class="sub">You only have to do this the first time. After that, Pin Paper opens like any other app.</p>
+
+      <ol class="steps">
+        <li>Open the downloaded <strong>Pin&nbsp;Paper</strong> <span class="pill">.dmg</span> file, then drag the <strong>Pin&nbsp;Paper</strong> icon into your <strong>Applications</strong> folder.</li>
+        <li>Open <strong>Applications</strong> and double-click <strong>Pin&nbsp;Paper</strong>. macOS shows a warning that it "cannot verify" the app — click <span class="pill">Done</span>. <em>(Do not click Move to Trash.)</em></li>
+        <li>Open <strong>System Settings</strong> → <strong>Privacy&nbsp;&amp;&nbsp;Security</strong>.</li>
+        <li>Scroll down to the <strong>Security</strong> section. You'll see "<strong>Pin&nbsp;Paper</strong> was blocked to protect your Mac." Click <span class="pill">Open Anyway</span>.</li>
+        <li>Confirm with Touch&nbsp;ID or your password, then click <span class="pill">Open Anyway</span> once more. Pin&nbsp;Paper launches. 🎉</li>
+      </ol>
+
+      <div class="note">
+        <b>On older macOS (Sonoma and earlier)?</b> You can skip System Settings: in <strong>Applications</strong>, <strong>right-click</strong> (or Control-click) the Pin&nbsp;Paper icon, choose <strong>Open</strong>, then click <strong>Open</strong> in the dialog.
+      </div>
+
+      <details>
+        <summary>"Pin Paper is damaged and can't be opened"</summary>
+        <p>Occasionally macOS quarantines an unsigned app and reports it as "damaged." It isn't — this clears the quarantine flag. Open <strong>Terminal</strong> (Applications → Utilities) and run:</p>
+        <code class="code-block">xattr -cr /Applications/Pin\ Paper.app</code>
+        <p>Then open Pin&nbsp;Paper normally.</p>
+      </details>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">© 2026 Pin Paper · Pin it. Keep it.</div>
+</footer>
+
+<script>
+  // Kick off the actual download without navigating away from these instructions.
+  // /download/mac counts the download server-side, then 302s to the .dmg (served as an
+  // attachment), so the file downloads while this page stays put.
+  (function () {
+    function startDownload() {
+      var f = document.createElement('iframe');
+      f.style.display = 'none';
+      f.src = '/download/mac';
+      document.body.appendChild(f);
+    }
+    // Small delay so the page paints first.
+    setTimeout(startDownload, 600);
+
+    // Manual fallback: same endpoint, but don't let the <a> navigate the page away.
+    document.getElementById('dlAgain').addEventListener('click', function (e) {
+      e.preventDefault();
+      startDownload();
+    });
+
+    if (window.gtag) window.gtag('event', 'download', { platform: 'mac' });
+    if (window.dataLayer) window.dataLayer.push({ event: 'download', platform: 'mac' });
+  })();
+</script>
+
+</body>
+</html>
